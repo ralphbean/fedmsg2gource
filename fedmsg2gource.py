@@ -5,7 +5,7 @@ Output strings suitable for consumption by the "gource" tool.
 
 Use this like::
 
-  $ python fedogource.py > my-git-log
+  $ python fedmsg2gource.py > my-git-log
   $ cat my-git-log | gource --log-format-custom -
 
 """
@@ -15,10 +15,14 @@ import fedmsg.meta
 
 import argparse
 import datetime
+import hashlib
 import itertools
 import json
 import math
+import os
+import subprocess
 import time
+import urllib
 
 
 config = fedmsg.config.load_config()
@@ -37,24 +41,61 @@ n_wraps = int(math.ceil(len(procs) / float(len(colors))))
 colors = colors * n_wraps
 color_lookup = dict(zip(procs, colors))
 
+
 # After all that color trickiness, here is our formatter we'll use.
-def formatter(message):
+def formatter(message, cache_directory):
     proc = fedmsg.meta.msg2processor(message, **config)
-    #avatars = fedmsg.meta.msg2avatars(message, **config)
     users = fedmsg.meta.msg2usernames(message, **config)
     objs = fedmsg.meta.msg2objects(message, **config)
     name = proc.__name__.lower()
 
     lines = []
     for user, obj in itertools.product(users, objs):
-        #_cache_avatar(user, avatars[user], cache_directory)
-        lines.append("%i|%s|A|%s|%s" % (
+        _cache_avatar(user, cache_directory)
+        lines.append(u"%i|%s|A|%s|%s" % (
             message['timestamp'],
             user,
             name + "/" + obj,
             color_lookup[name],
         ))
-    return "\n".join(lines)
+    return u"\n".join(lines)
+
+
+def _cache_avatar(username, directory):
+    """ Utility to grab avatars from outerspace """
+
+    query = urllib.urlencode({
+        's': 64,
+        'd': 'mm',
+    })
+
+    directory = os.path.expanduser(directory)
+    fname = os.path.join(directory, "%s.jpg" % username)
+
+    if os.path.exists(fname):
+        # We already have it cached.  Just chill.
+        return
+
+    # Make sure we have a place to write it
+    if os.path.isdir(directory):
+        # We've been here before... that's good.
+        pass
+    else:
+        os.makedirs(directory)
+
+    # Grab it from the net and write to local cache on disk.
+    openid = "http://%s.id.fedoraproject.org/" % username
+    hash = hashlib.sha256(openid).hexdigest()
+    url = "https://seccdn.libravatar.org/avatar/%s?%s" % (hash, query)
+
+    try:
+        as_png = fname[:-4] + ".png"
+        urllib.urlretrieve(url, as_png)
+        subprocess.Popen(["convert", as_png, fname]).communicate()
+        os.unlink(as_png)
+    except IOError:
+        # If we can't talk to gravatar.com, try not to crash.
+        pass
 
 
 def _get_messages(datagrepper_url, days):
@@ -89,6 +130,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--days", type=int, default=1,
                         help="Number of days of history")
+    parser.add_argument("-c", "--cache-dir",
+                        default="~/.cache/avatars",
+                        help="Cache directory for avatars")
     return parser.parse_args()
 
 
@@ -97,6 +141,10 @@ if __name__ == '__main__':
     args = parse_args()
     messages = _get_messages(datagrepper_url, days=args.days)
     for message in messages:
-        output = formatter(message)
-        if output:
-            print output
+        try:
+            output = formatter(message, args.cache_dir)
+            if output:
+                print output.encode('utf-8')
+        except Exception:
+            # grrrr....
+            continue
