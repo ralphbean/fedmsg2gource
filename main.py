@@ -13,38 +13,13 @@ Use this like::
 import requests
 import fedmsg.meta
 
+import argparse
+import datetime
 import itertools
 import json
 import math
+import time
 
-
-def _get_messages(datagrepper_url, entries=1000000):
-    """ Retrieves git.lookaside.new messages from datagrepper. """
-
-    rows_per_page = 100
-
-    def _load_page(page):
-        param = {
-            'order': 'desc',
-            'page': page,
-            'rows_per_page': rows_per_page,
-        }
-
-        response = requests.get(datagrepper_url + 'raw/', params=param)
-        return json.loads(response.text)
-
-    # Make an initial query just to get the number of pages
-    data = _load_page(page=1)
-    pages = data['pages']
-
-    for page in range(1, pages+1):
-        #log.info("Requesting page %i of %i from datagrepper" % (page, pages))
-        data = _load_page(page)
-        for message in data['raw_messages']:
-            yield message
-
-        if page > entries / 100.0:
-            break
 
 config = fedmsg.config.load_config()
 fedmsg.meta.make_processors(**config)
@@ -81,9 +56,46 @@ def formatter(message):
         ))
     return "\n".join(lines)
 
+
+def _get_messages(datagrepper_url, days):
+    """ Pages through the datagrepper history. """
+
+    start = datetime.datetime.now() - datetime.timedelta(days=days)
+    rows_per_page = 100
+
+    def _load_page(page):
+        param = {
+            'order': 'asc',
+            'page': page,
+            'start': time.mktime(start.timetuple()),
+            'rows_per_page': rows_per_page,
+        }
+
+        response = requests.get(datagrepper_url + 'raw/', params=param)
+        return json.loads(response.text)
+
+    # Make an initial query just to get the number of pages
+    data = _load_page(page=1)
+    pages = data['pages']
+
+    for page in range(1, pages+1):
+        #log.info("Requesting page %i of %i from datagrepper" % (page, pages))
+        data = _load_page(page)
+        for message in data['raw_messages']:
+            yield message
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--days", type=int, default=1,
+                        help="Number of days of history")
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
     datagrepper_url = 'https://apps.fedoraproject.org/datagrepper/'
-    messages = _get_messages(datagrepper_url)
+    args = parse_args()
+    messages = _get_messages(datagrepper_url, days=args.days)
     for message in messages:
         output = formatter(message)
         if output:
