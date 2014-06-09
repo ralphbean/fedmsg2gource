@@ -133,13 +133,15 @@ def parse_args():
     parser.add_argument("-c", "--cache-dir",
                         default="~/.cache/avatars",
                         help="Cache directory for avatars")
+    parser.add_argument("-u", "--datagrepper-url",
+                        default='https://apps.fedoraproject.org/datagrepper/',
+                        help="URL for an instance of 'datagrepper'")
     return parser.parse_args()
 
 
 if __name__ == '__main__':
-    datagrepper_url = 'https://apps.fedoraproject.org/datagrepper/'
     args = parse_args()
-    messages = _get_messages(datagrepper_url, days=args.days)
+    messages = _get_messages(args.datagrepper_url, days=args.days)
     for message in messages:
         try:
             output = formatter(message, args.cache_dir)
