@@ -105,7 +105,7 @@ def _cache_avatar(username, directory):
         pass
 
 
-def _get_messages(datagrepper_url, days):
+def get_old_messages(datagrepper_url, days):
     """ Pages through the datagrepper history. """
 
     start = datetime.datetime.now() - datetime.timedelta(days=days)
@@ -155,7 +155,7 @@ if __name__ == '__main__':
 
     if not args.live:
         # By default, go back into history and get old messages
-        messages = _get_messages(args.datagrepper_url, days=args.days)
+        messages = get_old_messages(args.datagrepper_url, days=args.days)
     else:
         # But, if --live is set, then pass along this handy generator
         def generator():
