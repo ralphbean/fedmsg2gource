@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-""" Produce a git log from the fedmsg history.
+""" fedmsg2gource [OPTIONS]
 
-Output strings suitable for consumption by the "gource" tool.
+Produce a git log from the fedmsg history; output strings suitable for
+consumption by the "gource" tool.
 
 Use this like::
 
@@ -127,7 +128,7 @@ def _get_messages(datagrepper_url, days):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(usage=__doc__)
     parser.add_argument("-d", "--days", type=int, default=1,
                         help="Number of days of history")
     parser.add_argument("-c", "--cache-dir",
