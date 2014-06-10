@@ -9,9 +9,14 @@ Use this like::
   $ python fedmsg2gource.py > my-git-log
   $ cat my-git-log | gource --log-format-custom -
 
+You can also produce a "live", never-ending git log from the fedmsg bus itself:
+
+  $ python fedmsg2gource.py --live | gource --log-format-custom -
+
 """
 
 import requests
+import fedmsg
 import fedmsg.meta
 
 import argparse
@@ -27,6 +32,7 @@ import urllib
 
 
 config = fedmsg.config.load_config()
+config['mute'] = True
 fedmsg.meta.make_processors(**config)
 
 # We have 8 colors here and an unknown number of message types.
@@ -130,19 +136,33 @@ def _get_messages(datagrepper_url, days):
 def parse_args():
     parser = argparse.ArgumentParser(usage=__doc__)
     parser.add_argument("-d", "--days", type=int, default=1,
-                        help="Number of days of history")
+                        help="Number of days of history.  "
+                        "Ignored if paired with --live.")
     parser.add_argument("-c", "--cache-dir",
                         default="~/.cache/avatars",
                         help="Cache directory for avatars")
     parser.add_argument("-u", "--datagrepper-url",
                         default='https://apps.fedoraproject.org/datagrepper/',
-                        help="URL for an instance of 'datagrepper'")
+                        help="URL for an instance of 'datagrepper'.  "
+                        "Ignored if paired with --live.")
+    parser.add_argument("-l", "--live", default=False, action='store_true',
+                        help="Stream the local fedmsg bus to a git log")
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_args()
-    messages = _get_messages(args.datagrepper_url, days=args.days)
+
+    if not args.live:
+        # By default, go back into history and get old messages
+        messages = _get_messages(args.datagrepper_url, days=args.days)
+    else:
+        # But, if --live is set, then pass along this handy generator
+        def generator():
+            for name, ep, topic, message in fedmsg.tail_messages(**config):
+                yield message
+        messages = generator()
+
     for message in messages:
         try:
             output = formatter(message, args.cache_dir)
