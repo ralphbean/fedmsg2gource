@@ -7,11 +7,11 @@ consumption by the "gource" tool.
 Use this like::
 
   $ python fedmsg2gource.py > my-git-log
-  $ cat my-git-log | gource --log-format-custom -
+  $ cat my-git-log | gource --log-format custom -
 
 You can also produce a "live", never-ending git log from the fedmsg bus itself:
 
-  $ python fedmsg2gource.py --live | gource --log-format-custom -
+  $ python fedmsg2gource.py --live | gource --log-format custom -
 
 """
 
