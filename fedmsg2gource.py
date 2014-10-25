@@ -14,6 +14,7 @@ You can also produce a "live", never-ending git log from the fedmsg bus itself:
   $ python fedmsg2gource.py --live | gource --log-format custom -
 
 """
+from __future__ import print_function
 
 import requests
 import fedmsg
@@ -27,7 +28,9 @@ import json
 import math
 import os
 import subprocess
+import sys
 import time
+import traceback
 import urllib
 
 
@@ -99,10 +102,13 @@ def _cache_avatar(username, directory):
         as_png = fname[:-4] + ".png"
         urllib.urlretrieve(url, as_png)
         subprocess.Popen(["convert", as_png, fname]).communicate()
-        os.unlink(as_png)
-    except IOError:
-        # If we can't talk to gravatar.com, try not to crash.
-        pass
+    except:
+        print(traceback.format_exc(), file=sys.stderr)
+    finally:
+        try:
+            os.unlink(as_png)
+        except IOError:
+            pass
 
 
 def get_old_messages(datagrepper_url, days):
@@ -167,7 +173,7 @@ if __name__ == '__main__':
         try:
             output = formatter(message, args.cache_dir)
             if output:
-                print output.encode('utf-8')
+                print(output.encode('utf-8'))
         except Exception:
             # grrrr....
             continue
