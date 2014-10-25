@@ -7,6 +7,13 @@ history.  It output strings suitable for consumption by the "gource" tool.
 This then lets you make beautiful visualizations of the entire Fedora
 community, not just code contributions.
 
+Requirements
+------------
+
+::
+
+    $ sudo yum install ImageMagick gource fedmsg python-fedmsg-meta-fedora-infrastructure
+
 Usage
 -----
 
