@@ -111,7 +111,7 @@ def _cache_avatar(username, directory):
             pass
 
 
-def get_old_messages(datagrepper_url, days):
+def get_old_messages(datagrepper_url, days, category=None):
     """ Pages through the datagrepper history. """
 
     start = datetime.datetime.now() - datetime.timedelta(days=days)
@@ -124,6 +124,8 @@ def get_old_messages(datagrepper_url, days):
             'start': time.mktime(start.timetuple()),
             'rows_per_page': rows_per_page,
         }
+        if category:
+            param['category'] = category
 
         response = requests.get(datagrepper_url + 'raw/', params=param)
         return json.loads(response.text)
@@ -153,6 +155,8 @@ def parse_args():
                         "Ignored if paired with --live.")
     parser.add_argument("-l", "--live", default=False, action='store_true',
                         help="Stream the local fedmsg bus to a git log")
+    parser.add_argument("-C", "--category", default=None,
+                        help="Limit visualization to one fedmsg category.")
     return parser.parse_args()
 
 
@@ -161,12 +165,21 @@ if __name__ == '__main__':
 
     if not args.live:
         # By default, go back into history and get old messages
-        messages = get_old_messages(args.datagrepper_url, days=args.days)
+        messages = get_old_messages(
+            args.datagrepper_url,
+            days=args.days,
+            category=args.category,
+        )
     else:
         # But, if --live is set, then pass along this handy generator
         def generator():
             for name, ep, topic, message in fedmsg.tail_messages(**config):
-                yield message
+                if not args.category:
+                    yield message
+                else:
+                    category = topic.split('.')[3]
+                    if category == args.category:
+                        yield message
         messages = generator()
 
     for message in messages:
