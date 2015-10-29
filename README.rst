@@ -4,7 +4,7 @@ fedmsg2gource
 fedmsg2gource is a CLI tool used to produce a fake git log from the fedmsg
 history.  It output strings suitable for consumption by the "gource" tool.
 
-This then lets you make beautiful visualizations areas of Fedora contribution
+This then lets you make beautiful visualizations of areas in the Fedora Project
 beyond code contributions.
 
 Requirements
