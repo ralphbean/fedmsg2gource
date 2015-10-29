@@ -12,7 +12,7 @@ Requirements
 
 ::
 
-    $ sudo yum install ImageMagick gource fedmsg python-fedmsg-meta-fedora-infrastructure
+    $ sudo dnf install ImageMagick gource fedmsg python-fedmsg-meta-fedora-infrastructure
 
 Usage
 -----
