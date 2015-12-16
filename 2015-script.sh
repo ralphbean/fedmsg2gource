@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash -xve
 
 ./fedmsg2gource.py --category git --start 1420088400 --end 1451624400 > logs/2015-git.log
 ./fedmsg2gource.py --category wiki --start 1420088400 --end 1451624400 > logs/2015-wiki.log
