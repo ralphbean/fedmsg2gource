@@ -25,6 +25,7 @@ import datetime
 import hashlib
 import itertools
 import json
+import logging
 import math
 import os
 import subprocess
@@ -111,21 +112,26 @@ def _cache_avatar(username, directory):
             pass
 
 
-def get_old_messages(datagrepper_url, days, category=None):
+def get_old_messages(datagrepper_url, start, end, category=None):
     """ Pages through the datagrepper history. """
 
-    start = datetime.datetime.now() - datetime.timedelta(days=days)
     rows_per_page = 100
+
+    pages = '??'
 
     def _load_page(page):
         param = {
             'order': 'asc',
             'page': page,
-            'start': time.mktime(start.timetuple()),
+            'start': start,
+            'end': end,
             'rows_per_page': rows_per_page,
         }
         if category:
             param['category'] = category
+
+        sys.stderr.write('Querying page %r of %r\n' % (page, pages))
+        sys.stderr.flush()
 
         response = requests.get(datagrepper_url + 'raw/', params=param)
         return json.loads(response.text)
@@ -143,8 +149,14 @@ def get_old_messages(datagrepper_url, days, category=None):
 
 def parse_args():
     parser = argparse.ArgumentParser(usage=__doc__)
-    parser.add_argument("-d", "--days", type=int, default=1,
+    parser.add_argument("-d", "--days", type=float, default=1,
                         help="Number of days of history.  "
+                        "Ignored if paired with --live, --start, or --end.")
+    parser.add_argument("-s", "--start", type=int, default=None,
+                        help="Start time in seconds since the epoch.  "
+                        "Ignored if paired with --live.")
+    parser.add_argument("-e", "--end", type=int, default=None,
+                        help="End time in seconds since the epoch.  "
                         "Ignored if paired with --live.")
     parser.add_argument("-c", "--cache-dir",
                         default="~/.cache/avatars",
@@ -161,13 +173,25 @@ def parse_args():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+
     args = parse_args()
 
     if not args.live:
         # By default, go back into history and get old messages
+
+        # Figure out what time frame we're being asked to query
+        start = args.start
+        end = args.end
+        if not end:
+            end = time.mktime(datetime.datetime.utcnow().timetuple())
+        if not start:
+            start = end - (args.days * 86400)
+
         messages = get_old_messages(
             args.datagrepper_url,
-            days=args.days,
+            start=start,
+            end=end,
             category=args.category,
         )
     else:
@@ -187,6 +211,7 @@ if __name__ == '__main__':
             output = formatter(message, args.cache_dir)
             if output:
                 print(output.encode('utf-8'))
+                sys.stdout.flush()
         except Exception:
             # grrrr....
             continue
