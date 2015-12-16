@@ -18,7 +18,26 @@ if __name__ == '__main__':
 
     cmd = "./fedmsg2gource.py --category {category} " + \
         "--start {start} --end {end} " + \
-        "> logs/{category}.log"
+        "> logs/2015-{category}.log"
 
+    print "#!/bin/bash -xve"
+    print
+
+    print "# Gather data"
     for proc in fedmsg.meta.processors[:-1]:
         print cmd.format(category=proc.__name__.lower(), **kwargs)
+
+    print
+    print
+    print "# Visualize it"
+
+    cmd = "cat logs/2015-{category}.log | gource " + \
+        "-i 10 " + \
+        "--user-image-dir ~/.cache/avatars " + \
+        "--log-format custom " + \
+        "--title '{title}' " + \
+        "-"
+
+    for proc in fedmsg.meta.processors[:-1]:
+        title = "%s (%s)" % (proc.__description__, proc.__obj__)
+        print cmd.format(category=proc.__name__.lower(), title=title)
