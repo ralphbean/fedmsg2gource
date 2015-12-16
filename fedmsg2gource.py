@@ -144,7 +144,12 @@ def get_old_messages(datagrepper_url, start, end, category=None):
         #log.info("Requesting page %i of %i from datagrepper" % (page, pages))
         data = _load_page(page)
         for message in data['raw_messages']:
-            yield message
+            # Even though we passed our category query off to datagrepper, some
+            # old old messages have goofy categories stored.. so we do an extra
+            # check here to filter out ones we don't actually want.
+            actual_category = message['topic'].split('.')[3]
+            if category and category == actual_category:
+                yield message
 
 
 def parse_args():
