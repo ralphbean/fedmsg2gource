@@ -132,7 +132,7 @@ def get_old_messages(datagrepper_url, start, end, category=None):
         if category:
             param['category'] = category
 
-        log.info('Querying page %r of %r\n' % (page, pages))
+        log.info('Querying page %r of %r' % (page, pages))
 
         response = requests.get(datagrepper_url + 'raw/', params=param)
 
