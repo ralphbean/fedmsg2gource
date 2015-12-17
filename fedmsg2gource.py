@@ -137,10 +137,12 @@ def get_old_messages(datagrepper_url, start, end, category=None):
         response = requests.get(datagrepper_url + 'raw/', params=param)
 
         if not bool(response):
-            if tries > 3:
+            if tries > 10:
                 raise IOError("Failed %r times at %r" % (tries, response.url))
             log.warn('Failed %r %r.  Trying again.' % (response.url, response))
-            time.sleep(1)
+            duration = 2**tries
+            log.info('Sleeping %r seconds' % duration)
+            time.sleep(duration)
             return _load_page(page, tries+1)
 
         return json.loads(response.text)
