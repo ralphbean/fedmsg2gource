@@ -34,6 +34,8 @@ import time
 import traceback
 import urllib
 
+log = logging.getLogger('fedmsg2gource')
+
 
 config = fedmsg.config.load_config()
 config['mute'] = True
@@ -119,7 +121,7 @@ def get_old_messages(datagrepper_url, start, end, category=None):
 
     pages = '??'
 
-    def _load_page(page):
+    def _load_page(page, tries=0):
         param = {
             'order': 'asc',
             'page': page,
@@ -130,10 +132,17 @@ def get_old_messages(datagrepper_url, start, end, category=None):
         if category:
             param['category'] = category
 
-        sys.stderr.write('Querying page %r of %r\n' % (page, pages))
-        sys.stderr.flush()
+        log.info('Querying page %r of %r\n' % (page, pages))
 
         response = requests.get(datagrepper_url + 'raw/', params=param)
+
+        if not bool(response):
+            if tries > 3:
+                raise IOError("Failed %r times at %r" % (tries, response.url))
+            log.warn('Failed %r %r.  Trying again.' % (response.url, response))
+            time.sleep(1)
+            return _load_page(page, tries+1)
+
         return json.loads(response.text)
 
     # Make an initial query just to get the number of pages
