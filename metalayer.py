@@ -6,6 +6,20 @@ import datetime
 import fedmsg.config
 import fedmsg.meta
 
+skip = [
+    # Garbage
+    'logger',
+    'announce',
+    'datanommer',
+
+    # Not yet deployed
+    'zanata',
+
+    # uninteresting, maybe?
+    'mirrormanager',
+    'summershum',
+    'faf',
+]
 
 if __name__ == '__main__':
     config = fedmsg.config.load_config()
@@ -25,7 +39,10 @@ if __name__ == '__main__':
 
     print "# Gather data"
     for proc in fedmsg.meta.processors[:-1]:
-        print cmd.format(category=proc.__name__.lower(), **kwargs)
+        category = proc.__name__.lower()
+        if category in skip:
+            print "#",
+        print cmd.format(category=category, **kwargs)
 
     print
     print
@@ -36,8 +53,12 @@ if __name__ == '__main__':
         "--user-image-dir ~/.cache/avatars " + \
         "--log-format custom " + \
         "--title '{title}' " + \
+        "-o ppm/2015-{category}.ppm" + \
         "-"
 
     for proc in fedmsg.meta.processors[:-1]:
+        category = proc.__name__.lower()
+        if category in skip:
+            print "#",
         title = "%s (%s)" % (proc.__description__, proc.__obj__)
-        print cmd.format(category=proc.__name__.lower(), title=title)
+        print cmd.format(category=category, title=title)
