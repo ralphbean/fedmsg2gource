@@ -49,12 +49,14 @@ if __name__ == '__main__':
     print "# Visualize it"
 
     cmd = "cat logs/2015-{category}.log | gource " + \
-        "-i 10 " + \
+        "-i 3 " + \
         "--user-image-dir ~/.cache/avatars " + \
         "--log-format custom " + \
         "--title '{title}' " + \
-        "-o ppm/2015-{category}.ppm " + \
-        "-"
+        "-o - " + \
+        "- " + \
+        "| ffmpeg -y -r 60 -f image2pipe -vcodec ppm -i - -vcodec libvpx -b 10000K webm/2015-{category}.webm"
+
 
     for proc in fedmsg.meta.processors[:-1]:
         category = proc.__name__.lower()
