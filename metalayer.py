@@ -53,7 +53,7 @@ if __name__ == '__main__':
         "--user-image-dir ~/.cache/avatars " + \
         "--log-format custom " + \
         "--title '{title}' " + \
-        "-o ppm/2015-{category}.ppm" + \
+        "-o ppm/2015-{category}.ppm " + \
         "-"
 
     for proc in fedmsg.meta.processors[:-1]:
