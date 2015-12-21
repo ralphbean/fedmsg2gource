@@ -62,7 +62,14 @@ def formatter(message, cache_directory):
     objs = fedmsg.meta.msg2objects(message, **config)
     name = proc.__name__.lower()
 
+    # If we don't have any users, then pretend that the "system" user is doing
+    # this. For example, mdapi messages have no user, so pretend that "mdapi"
+    # is doing the actions.
+    if not users:
+        users = set([name])
+
     lines = []
+
     for user, obj in itertools.product(users, objs):
         _cache_avatar(user, cache_directory)
         lines.append(u"%i|%s|A|%s|%s" % (
