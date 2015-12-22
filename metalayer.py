@@ -48,19 +48,31 @@ if __name__ == '__main__':
     print
     print "# Visualize it"
 
-    cmd = "cat logs/2015-{category}.log | gource " + \
-        "-i 3 " + \
-        "--user-image-dir ~/.cache/avatars " + \
-        "--log-format custom " + \
-        "--title '{title}' " + \
-        "-o - " + \
-        "- " + \
-        "| ffmpeg -y -r 60 -f image2pipe -vcodec ppm -i - -vcodec libvpx -b 10000K webm/2015-{category}.webm"
+    variable_options = {
+        'plain': '',
+        'without-filenames': '--hide dirnames,filenames',
+        'without-dirnames': '--hide dirnames',
+    }
+    for name, extra_opt in variable_options.items():
+        cmd = "gource " + \
+            "-i 6 " + \
+            "--user-image-dir ~/.cache/avatars " + \
+            "--log-format custom " + \
+            "--stop-at-end " + \
+            "--title '{title}' " + \
+            extra_opt + ' ' + \
+            "--path ./logs/2015-{category}.log " + \
+            "-o - " + \
+            "| ffmpeg -y -r 60 -f image2pipe -vcodec ppm -i - -vcodec libvpx -b 10000K webm/2015-{category}-{name}.webm"
 
 
-    for proc in fedmsg.meta.processors[:-1]:
-        category = proc.__name__.lower()
-        if category in skip:
-            print "#",
-        title = "%s (%s)" % (proc.__description__, proc.__obj__)
-        print cmd.format(category=category, title=title)
+        for proc in fedmsg.meta.processors[:-1]:
+            category = proc.__name__.lower()
+            if category in skip:
+                print "#",
+
+            title = "%s (%s)" % (proc.__description__, proc.__obj__)
+            if 'fedora' not in title.lower():
+                title = 'Fedora ' + title
+
+            print cmd.format(category=category, title=title, name=name)
